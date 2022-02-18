@@ -1,6 +1,20 @@
 const express = require("express");
 const app = express();
 const bodyParcer = require("body-parser");
+const connection = require("./database/database");
+const Pergunta = require("./database/Pergunta");
+const Resposta = require("./database/Resposta");
+
+//DataBase
+
+connection
+    .authenticate()
+    .then(() => {
+        console.log("Conexão feita com o banco de dados!")
+    })
+    .catch((msgErro) => {
+        console.log(msgErro);
+    })
 
 // ESTOU DIZENDO PARA O EXPRESS USAR O EJS COMO VIEW ENGINE
 
@@ -15,7 +29,14 @@ app.use(bodyParcer.json());
 //Rotas
 
 app.get("/",(req, res)=>{
-    res.render("index");
+    Pergunta.findAll({ raw: true, order:[ // order para ordenar as perguntas.
+        ['id','DESC'] //ASC = crescente
+    ]}).then(perguntas => { //raw feito para listar so os dados necessarios raw=cru
+        res.render("index", {
+            perguntas: perguntas
+        });
+    });
+    
 });
 
 app.get("/perguntar",(req, res)=>{
@@ -25,7 +46,29 @@ app.get("/perguntar",(req, res)=>{
 app.post("/salvarpergunta",(req, res)=>{
     var titulo = req.body.titulo;
     var descricao = req.body.descricao;
-    res.send("Formulário recebido! titulo " + titulo + " " + " descricao " + descricao);
+    Pergunta.create({
+        titulo:titulo,
+        descricao: descricao
+    }).then(() => {
+        res.redirect("/");
+    });
 });
+
+app.get("/pergunta/:id", (req, res) => {
+    var id = req.params.id;
+    Pergunta.findOne({
+        where:{id: id}                      // where serve para fazer busca com condições
+    }).then(pergunta =>{  
+        if(pergunta != undefined){          // significa que a pergunta foi achada
+            res.render("pergunta", {
+                pergunta: pergunta
+            });
+        }else{                             // nao encontrada
+            res.redirect("/");
+        }
+    });
+})
+
+app.post()
 
 app.listen(3000,()=>{console.log("App rodando!");});
