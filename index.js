@@ -59,16 +59,33 @@ app.get("/pergunta/:id", (req, res) => {
     Pergunta.findOne({
         where:{id: id}                      // where serve para fazer busca com condições
     }).then(pergunta =>{  
-        if(pergunta != undefined){          // significa que a pergunta foi achada
-            res.render("pergunta", {
-                pergunta: pergunta
+        if(pergunta != undefined){ 
+            
+            Resposta.findAll({                                     // significa que a pergunta foi achada
+                where: { perguntaId: pergunta.id},
+                order: [ ['id','DESC'] ]
+            }).then(respostas => {
+                res.render("pergunta", {
+                    pergunta: pergunta,
+                    respostas: respostas
+                });
             });
-        }else{                             // nao encontrada
+              
+        }else{                                                       // nao encontrada
             res.redirect("/");
         }
     });
 })
 
-app.post()
+app.post("/responder", (req, res)=>{
+    var corpo = req.body.corpo;
+    var perguntaId = req.body.pergunta;
+    Resposta.create({
+        corpo: corpo,
+        perguntaId: perguntaId
+    }).then(() =>{
+        res.redirect("/pergunta/"+perguntaId); //res.redirect("/pergunta/4") 
+    });
+});
 
 app.listen(3000,()=>{console.log("App rodando!");});
